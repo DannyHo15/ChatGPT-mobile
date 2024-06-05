@@ -1,16 +1,17 @@
-import { observer } from "mobx-react-lite"
-import React, { ComponentType, FC, useEffect, useMemo, useRef, useState } from "react"
-import { TextInput, TextStyle, ViewStyle } from "react-native"
-import { Button, Icon, Screen, Text, TextField, TextFieldAccessoryProps } from "../components"
-import { useStores } from "../models"
-import { AppStackScreenProps } from "../navigators"
-import { colors, spacing } from "../theme"
+import React, { ComponentType, FC, useEffect, useMemo, useRef, useState } from 'react'
+import { observer } from 'mobx-react-lite'
+import { TextInput, TextStyle, ViewStyle } from 'react-native'
+import { AuthStackScreenProps } from 'app/navigators'
+import { Button, Icon, Screen, Text, TextField, TextFieldAccessoryProps } from 'app/components'
+import { colors, spacing } from 'app/theme'
+import { useStores } from 'app/models'
+import { $pageContainer } from 'app/theme/style'
 
-interface LoginScreenProps extends AppStackScreenProps<"Login"> {}
+interface LoginScreenProps extends AuthStackScreenProps<'Login'> { }
 
-export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_props) {
+export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen({ route }) {
+  const isLogin = route.params.isLogin
   const authPasswordInput = useRef<TextInput>(null)
-
   const [authPassword, setAuthPassword] = useState("")
   const [isAuthPasswordHidden, setIsAuthPasswordHidden] = useState(true)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -18,7 +19,6 @@ export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_
   const {
     authenticationStore: { authEmail, setAuthEmail, setAuthToken, validationError },
   } = useStores()
-
   useEffect(() => {
     // Here is where you could fetch credentials from keychain or storage
     // and pre-fill the form fields.
@@ -31,9 +31,22 @@ export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_
       setAuthEmail("")
     }
   }, [])
-
+  const PasswordRightAccessory: ComponentType<TextFieldAccessoryProps> = useMemo(
+    () =>
+      function PasswordRightAccessory(props: TextFieldAccessoryProps) {
+        return (
+          <Icon
+            icon={isAuthPasswordHidden ? "view" : "hidden"}
+            color={colors.palette.neutral800}
+            containerStyle={props.style}
+            size={20}
+            onPress={() => setIsAuthPasswordHidden(!isAuthPasswordHidden)}
+          />
+        )
+      },
+    [isAuthPasswordHidden],
+  )
   const error = isSubmitted ? validationError : ""
-
   function login() {
     setIsSubmitted(true)
     setAttemptsCount(attemptsCount + 1)
@@ -50,29 +63,13 @@ export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_
     setAuthToken(String(Date.now()))
   }
 
-  const PasswordRightAccessory: ComponentType<TextFieldAccessoryProps> = useMemo(
-    () =>
-      function PasswordRightAccessory(props: TextFieldAccessoryProps) {
-        return (
-          <Icon
-            icon={isAuthPasswordHidden ? "view" : "hidden"}
-            color={colors.palette.neutral800}
-            containerStyle={props.style}
-            size={20}
-            onPress={() => setIsAuthPasswordHidden(!isAuthPasswordHidden)}
-          />
-        )
-      },
-    [isAuthPasswordHidden],
-  )
-
   return (
     <Screen
-      preset="auto"
-      contentContainerStyle={$screenContentContainer}
-      safeAreaEdges={["top", "bottom"]}
-    >
-      <Text testID="login-heading" tx="loginScreen.signIn" preset="heading" style={$signIn} />
+      KeyboardAvoidingViewProps={{
+        behavior: 'padding',
+      }}
+      style={[$pageContainer, $root]} preset="auto">
+      <Text testID="login-heading" tx={isLogin ? "loginScreen.signIn" : "loginScreen.emailButton"} preset="heading" style={$signIn} />
       <Text tx="loginScreen.enterDetails" preset="subheading" style={$enterDetails} />
       {attemptsCount > 2 && <Text tx="loginScreen.hint" size="sm" weight="light" style={$hint} />}
 
@@ -87,7 +84,7 @@ export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_
         labelTx="loginScreen.emailFieldLabel"
         placeholderTx="loginScreen.emailFieldPlaceholder"
         helper={error}
-        status={error ? "error" : undefined}
+        status={error ? 'error' : undefined}
         onSubmitEditing={() => authPasswordInput.current?.focus()}
       />
 
@@ -108,7 +105,7 @@ export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_
 
       <Button
         testID="login-button"
-        tx="loginScreen.tapToSignIn"
+        tx={isLogin ? "loginScreen.signIn" : "loginScreen.emailButton"}
         style={$tapButton}
         preset="reversed"
         onPress={login}
@@ -117,9 +114,9 @@ export const LoginScreen: FC<LoginScreenProps> = observer(function LoginScreen(_
   )
 })
 
-const $screenContentContainer: ViewStyle = {
-  paddingVertical: spacing.xxl,
-  paddingHorizontal: spacing.lg,
+const $root: ViewStyle = {
+  flex: 1,
+  padding: spacing.lg,
 }
 
 const $signIn: TextStyle = {
@@ -138,7 +135,6 @@ const $hint: TextStyle = {
 const $textField: ViewStyle = {
   marginBottom: spacing.lg,
 }
-
 const $tapButton: ViewStyle = {
-  marginTop: spacing.xs,
+  borderRadius: 14,
 }

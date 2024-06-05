@@ -1,6 +1,6 @@
 {
-  "name": "myAppGPT",
-  "displayName": "myAppGPT",
+  "name": "AppGPT",
+  "displayName": "AppGPT",
   "expo": {
     "name": "myAppGPT",
     "slug": "myAppGPT",
@@ -8,6 +8,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon-all.png",
+    "extra": {
+      "eas": {
+        "projectId": "d78aae3b-96ad-4d0b-a129-0de1026dfd7e"
+      }
+    },
     "splash": {
       "image": "./assets/images/splash-logo-all.png",
       "resizeMode": "contain",
@@ -63,11 +68,31 @@
             "flipper": false
           },
           "android": {
-            "newArchEnabled": false
+            "newArchEnabled": false,
+            "compileSdkVersion": 33,
+            "targetSdkVersion": 33,
+            "minSdkVersion": 23,
+            "buildToolsVersion": "33.0.0",
+            "kotlinVersion": "1.6.20"
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "tsconfigPaths": true

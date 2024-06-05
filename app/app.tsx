@@ -14,41 +14,46 @@ if (__DEV__) {
   // Load Reactotron configuration in development. We don't want to
   // include this in our production bundle, so we are using `if (__DEV__)`
   // to only execute this in development.
-  require("./devtools/ReactotronConfig.ts")
+  require('./devtools/ReactotronConfig.ts')
 }
-import "./i18n"
-import "./utils/ignoreWarnings"
-import { useFonts } from "expo-font"
-import React from "react"
-import { initialWindowMetrics, SafeAreaProvider } from "react-native-safe-area-context"
-import * as Linking from "expo-linking"
-import { useInitialRootStore } from "./models"
-import { AppNavigator, useNavigationPersistence } from "./navigators"
-import { ErrorBoundary } from "./screens/ErrorScreen/ErrorBoundary"
-import * as storage from "./utils/storage"
-import { customFontsToLoad } from "./theme"
-import Config from "./config"
-import { GestureHandlerRootView } from "react-native-gesture-handler"
-import { ViewStyle } from "react-native"
-
-export const NAVIGATION_PERSISTENCE_KEY = "NAVIGATION_STATE"
-
+import './i18n'
+import './utils/ignoreWarnings'
+import { ClerkProvider, SignedIn } from '@clerk/clerk-expo'
+import { SQLiteProvider } from 'expo-sqlite/next'
+import { useFonts } from 'expo-font'
+import React from 'react'
+import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context'
+import * as Linking from 'expo-linking'
+import { useInitialRootStore } from './models'
+import { AppNavigator, useNavigationPersistence } from './navigators'
+import { ErrorBoundary } from './screens/ErrorScreen/ErrorBoundary'
+import * as storage from './utils/storage'
+import { customFontsToLoad } from './theme'
+import Config from './config'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { ViewStyle, Text } from 'react-native'
+import 'react-native-gesture-handler'
+import * as SecureStore from 'expo-secure-store'
+import Toast from 'react-native-toast-message'
+import { migrateDbIfNeeded } from './utils/database'
+export const NAVIGATION_PERSISTENCE_KEY = 'NAVIGATION_STATE'
+const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
 // Web linking configuration
-const prefix = Linking.createURL("/")
+const prefix = Linking.createURL('/')
 const config = {
   screens: {
     Login: {
-      path: "",
+      path: '',
     },
-    Welcome: "welcome",
+    Welcome: 'welcome',
     Demo: {
       screens: {
         DemoShowroom: {
-          path: "showroom/:queryIndex?/:itemIndex?",
+          path: 'showroom/:queryIndex?/:itemIndex?',
         },
-        DemoDebug: "debug",
-        DemoPodcastList: "podcast",
-        DemoCommunity: "community",
+        DemoDebug: 'debug',
+        DemoPodcastList: 'podcast',
+        DemoCommunity: 'community',
       },
     },
   },
@@ -70,6 +75,23 @@ function App(props: AppProps) {
     onNavigationStateChange,
     isRestored: isNavigationStateRestored,
   } = useNavigationPersistence(storage, NAVIGATION_PERSISTENCE_KEY)
+
+  const tokenCache = {
+    async getToken(key: string) {
+      try {
+        return SecureStore.getItemAsync(key)
+      } catch (err) {
+        return null
+      }
+    },
+    async saveToken(key: string, value: string) {
+      try {
+        return SecureStore.setItemAsync(key, value)
+      } catch (err) {
+        return
+      }
+    },
+  }
 
   const [areFontsLoaded] = useFonts(customFontsToLoad)
 
@@ -98,17 +120,20 @@ function App(props: AppProps) {
 
   // otherwise, we're ready to render the app
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <ErrorBoundary catchErrors={Config.catchErrors}>
-        <GestureHandlerRootView style={$container}>
-          <AppNavigator
-            linking={linking}
-            initialState={initialNavigationState}
-            onStateChange={onNavigationStateChange}
-          />
-        </GestureHandlerRootView>
-      </ErrorBoundary>
-    </SafeAreaProvider>
+    <SQLiteProvider databaseName="chat.db" onInit={migrateDbIfNeeded}>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <ErrorBoundary catchErrors={Config.catchErrors}>
+          <GestureHandlerRootView style={$container}>
+            <AppNavigator
+              linking={linking}
+              initialState={initialNavigationState}
+              onStateChange={onNavigationStateChange}
+            />
+          </GestureHandlerRootView>
+        </ErrorBoundary>
+        <Toast />
+      </SafeAreaProvider>
+    </SQLiteProvider>
   )
 }
 
